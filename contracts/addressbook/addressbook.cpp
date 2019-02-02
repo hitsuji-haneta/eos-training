@@ -43,6 +43,14 @@ class [[eosio:contract]] addressbook : public eosio::contract {
       }
     }
 
+    void erase(name user) {
+      require_auth(user);
+      address_index addresses(_code, _code.value);
+      auto iterator = addresses.find(user.value);
+      eosio_assert(iterator != addresses.end(), "Record does not exist.");
+      addresses.erase(iterator);
+    }
+
   private:
     struct person {
       name key;
