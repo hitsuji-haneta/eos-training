@@ -2,7 +2,7 @@
 
 using namespace eosio;
 
-class [[eosio:contract]] addressbook : public eosio::contract {
+class [[eosio::contract]] addressbook : public eosio::contract {
   public:
     addressbook(
       name receiver,
@@ -10,6 +10,7 @@ class [[eosio:contract]] addressbook : public eosio::contract {
       datastream<const char*> ds
     ):contract(receiver, code, ds) {}
 
+    [[eosio::action]]
     void upsert(
       name user,
       std::string first_name,
@@ -21,7 +22,7 @@ class [[eosio:contract]] addressbook : public eosio::contract {
       require_auth( user );
       address_index addresses(_code, _code.value);
       auto iterator = addresses.find(user.value);
-      if( iterator == addreseses.end()) {
+      if( iterator == addresses.end()) {
         addresses.emplace( user, [&]( auto& row ) {
           row.key = user;
           row.first_name = first_name;
@@ -43,6 +44,7 @@ class [[eosio:contract]] addressbook : public eosio::contract {
       }
     }
 
+    [[eosio::action]]
     void erase(name user) {
       require_auth(user);
       address_index addresses(_code, _code.value);
@@ -52,7 +54,7 @@ class [[eosio:contract]] addressbook : public eosio::contract {
     }
 
   private:
-    struct person {
+    struct [[eosio::table]] person {
       name key;
       std::string first_name;
       std::string last_name;
@@ -64,4 +66,6 @@ class [[eosio:contract]] addressbook : public eosio::contract {
     };
 
     typedef eosio::multi_index<"people"_n, person> address_index;
-}
+};
+
+EOSIO_DISPATCH( addressbook, (upsert)(erase))
