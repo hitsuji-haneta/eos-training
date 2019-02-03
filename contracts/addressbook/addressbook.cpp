@@ -33,6 +33,7 @@ class [[eosio::contract]] addressbook : public eosio::contract {
           row.city = city;
           row.state = state;
         });
+        send_summary(user, " successfully emplaced record to addressbook");
       } else {
         std::string changes;
         addresses.modify(iterator, user, [&]( auto& row ) {
@@ -44,6 +45,7 @@ class [[eosio::contract]] addressbook : public eosio::contract {
           row.city = city;
           row.state = state;
         });
+        send_summary(user, " successfully modified record to addressbook");
       }
     }
 
@@ -54,6 +56,13 @@ class [[eosio::contract]] addressbook : public eosio::contract {
       auto iterator = addresses.find(user.value);
       eosio_assert(iterator != addresses.end(), "Record does not exist.");
       addresses.erase(iterator);
+      send_summary(user, " successfully erased record from addressbook");
+    }
+
+    [[eosio::action]]
+    void notify(name user, std::string msg) {
+      require_auth(get_self());
+      require_recipient(user);
     }
 
   private:
@@ -74,6 +83,15 @@ class [[eosio::contract]] addressbook : public eosio::contract {
       "people"_n, person,
       indexed_by<"byage"_n, const_mem_fun<person, uint64_t, &person::get_secondary_1>>
     > address_index;
+
+    void send_summary(name user, std::string message){
+      action(
+        permission_level{get_self(), "active"_n},
+        get_self(),
+        "notify"_n,
+        std::make_tuple(user, name{user}.to_string() + message)
+      ).send();
+    }
 };
 
-EOSIO_DISPATCH( addressbook, (upsert)(erase))
+EOSIO_DISPATCH( addressbook, (upsert)(erase)(notify))
